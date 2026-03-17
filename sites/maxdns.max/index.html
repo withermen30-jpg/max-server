@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MaxDNS — Domain Yönetimi</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: #070810;
+  color: #E8EAF6;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+.header {
+  background: rgba(18,21,31,.95);
+  border-bottom: 1px solid rgba(79,195,247,.15);
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.logo { font-size: 20px; font-weight: 900; color: #4FC3F7; }
+.logo span { color: #E8EAF6; }
+.user-info { font-size: 13px; color: #7986A8; display: flex; align-items: center; gap: 12px; }
+.btn-logout {
+  background: transparent; border: 1px solid rgba(255,82,82,.4);
+  color: #FF5252; border-radius: 8px; padding: 6px 14px;
+  font-size: 12px; cursor: pointer;
+}
+.btn-logout:hover { background: rgba(255,82,82,.1); }
+
+/* ── Layout ── */
+.container { max-width: 760px; margin: 0 auto; padding: 32px 20px; }
+
+/* ── Kartlar ── */
+.card {
+  background: rgba(18,21,31,.9);
+  border: 1px solid rgba(79,195,247,.12);
+  border-radius: 16px;
+  padding: 28px;
+  margin-bottom: 20px;
+}
+.card-title {
+  font-size: 15px; font-weight: 700; color: #4FC3F7;
+  margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+}
+
+/* ── Form ── */
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: 12px; color: #7986A8; margin-bottom: 6px; }
+.form-group input {
+  width: 100%; background: rgba(255,255,255,.05);
+  border: 1px solid rgba(79,195,247,.2); border-radius: 10px;
+  padding: 11px 14px; color: #E8EAF6; font-size: 14px; outline: none;
+}
+.form-group input:focus { border-color: #4FC3F7; background: rgba(79,195,247,.05); }
+.form-row { display: flex; gap: 12px; }
+.form-row .form-group { flex: 1; }
+
+/* ── Butonlar ── */
+.btn {
+  padding: 11px 22px; border-radius: 10px; border: none;
+  font-size: 14px; font-weight: 600; cursor: pointer; width: 100%;
+}
+.btn-primary { background: #4FC3F7; color: #000; }
+.btn-primary:hover { background: #0288D1; color: #fff; }
+.btn-danger { background: rgba(255,82,82,.15); color: #FF5252;
+              border: 1px solid rgba(255,82,82,.3); }
+.btn-danger:hover { background: rgba(255,82,82,.25); }
+.btn-sm { padding: 6px 14px; font-size: 12px; width: auto; }
+
+/* ── Tabs ── */
+.tabs { display: flex; gap: 4px; margin-bottom: 24px; }
+.tab {
+  flex: 1; padding: 10px; text-align: center; border-radius: 10px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  background: rgba(255,255,255,.04); color: #7986A8; border: none;
+}
+.tab.active { background: rgba(79,195,247,.15); color: #4FC3F7; }
+
+/* ── Domain listesi ── */
+.domain-item {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(79,195,247,.1);
+  border-radius: 12px; padding: 16px; margin-bottom: 10px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.domain-name { font-size: 15px; font-weight: 700; color: #4FC3F7; }
+.domain-meta { font-size: 12px; color: #7986A8; margin-top: 3px; }
+.domain-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.badge {
+  display: inline-block; padding: 2px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 600;
+}
+.badge-active { background: rgba(0,200,83,.15); color: #00C853; }
+
+/* ── Alert ── */
+.alert {
+  padding: 12px 16px; border-radius: 10px; font-size: 13px;
+  margin-bottom: 16px; display: none;
+}
+.alert-ok    { background: rgba(0,200,83,.1);  color: #00C853; border: 1px solid rgba(0,200,83,.3); }
+.alert-err   { background: rgba(255,82,82,.1); color: #FF5252; border: 1px solid rgba(255,82,82,.3); }
+
+/* ── Giriş ekranı ── */
+.auth-wrap {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+}
+.auth-card {
+  background: rgba(18,21,31,.95); border: 1px solid rgba(79,195,247,.15);
+  border-radius: 20px; padding: 40px; width: 90%; max-width: 380px;
+}
+.auth-logo { text-align: center; font-size: 28px; font-weight: 900;
+             color: #4FC3F7; margin-bottom: 6px; }
+.auth-logo span { color: #E8EAF6; }
+.auth-sub { text-align: center; color: #7986A8; font-size: 13px; margin-bottom: 28px; }
+.auth-switch { text-align: center; margin-top: 16px; font-size: 13px; color: #7986A8; }
+.auth-switch a { color: #4FC3F7; cursor: pointer; text-decoration: none; }
+
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- ══ GİRİŞ EKRANI ══ -->
+<div id="authScreen" class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo">Max<span>DNS</span></div>
+    <div class="auth-sub">Domain Yönetim Sistemi</div>
+
+    <div id="alertAuth" class="alert"></div>
+
+    <!-- Giriş formu -->
+    <div id="loginForm">
+      <div class="form-group">
+        <label>Kullanıcı Adı</label>
+        <input id="loginUser" type="text" placeholder="kullanici_adi"/>
+      </div>
+      <div class="form-group">
+        <label>Şifre</label>
+        <input id="loginPass" type="password" placeholder="••••••"/>
+      </div>
+      <button class="btn btn-primary" onclick="doLogin()">Giriş Yap</button>
+      <div class="auth-switch">
+        Hesabın yok mu? <a onclick="showRegister()">Kayıt Ol</a>
+      </div>
+    </div>
+
+    <!-- Kayıt formu -->
+    <div id="registerForm" class="hidden">
+      <div class="form-group">
+        <label>Kullanıcı Adı</label>
+        <input id="regUser" type="text" placeholder="kullanici_adi"/>
+      </div>
+      <div class="form-group">
+        <label>E-posta (opsiyonel)</label>
+        <input id="regEmail" type="email" placeholder="email@ornek.com"/>
+      </div>
+      <div class="form-group">
+        <label>Şifre</label>
+        <input id="regPass" type="password" placeholder="En az 6 karakter"/>
+      </div>
+      <button class="btn btn-primary" onclick="doRegister()">Kayıt Ol</button>
+      <div class="auth-switch">
+        Hesabın var mı? <a onclick="showLogin()">Giriş Yap</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ANA PANEL ══ -->
+<div id="mainPanel" class="hidden">
+  <div class="header">
+    <div class="logo">Max<span>DNS</span></div>
+    <div class="user-info">
+      <span id="headerUsername"></span>
+      <button class="btn-logout" onclick="doLogout()">Çıkış</button>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('domains', this)">📋 Domainlerim</button>
+      <button class="tab" onclick="switchTab('add', this)">➕ Domain Ekle</button>
+      <button class="tab" onclick="switchTab('lookup', this)">🔍 DNS Sorgula</button>
+    </div>
+
+    <!-- ── Domainlerim ── -->
+    <div id="tab-domains">
+      <div class="card">
+        <div class="card-title">📋 Kayıtlı Domainlerim</div>
+        <div id="alertDomains" class="alert"></div>
+        <div id="domainList">
+          <div style="color:#7986A8;font-size:13px;text-align:center;padding:20px;">
+            Yükleniyor...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Domain Ekle ── -->
+    <div id="tab-add" class="hidden">
+      <div class="card">
+        <div class="card-title">➕ Yeni Domain Kaydet</div>
+        <div id="alertAdd" class="alert"></div>
+        <div class="form-group">
+          <label>Domain Adı</label>
+          <input id="newDomain" type="text" placeholder="sitenim.max"/>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Sunucu IP</label>
+            <input id="newIp" type="text" placeholder="1.2.3.4"/>
+          </div>
+          <div class="form-group">
+            <label>Port</label>
+            <input id="newPort" type="number" placeholder="1000" value="1000"/>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="doAddDomain()">Domain Kaydet</button>
+      </div>
+    </div>
+
+    <!-- ── DNS Sorgula ── -->
+    <div id="tab-lookup" class="hidden">
+      <div class="card">
+        <div class="card-title">🔍 DNS Sorgula</div>
+        <div id="alertLookup" class="alert"></div>
+        <div class="form-group">
+          <label>Domain</label>
+          <input id="lookupDomain" type="text" placeholder="ornek.max"/>
+        </div>
+        <button class="btn btn-primary" onclick="doLookup()">Sorgula</button>
+        <div id="lookupResult" style="margin-top:16px;display:none;">
+          <div style="background:rgba(0,200,83,.07);border:1px solid rgba(0,200,83,.2);
+                      border-radius:10px;padding:14px;font-size:13px;">
+            <div style="color:#00C853;font-weight:700;margin-bottom:6px;">✓ Domain Bulundu</div>
+            <div style="color:#7986A8;">IP: <span id="lrIp" style="color:#E8EAF6;"></span></div>
+            <div style="color:#7986A8;">Port: <span id="lrPort" style="color:#E8EAF6;"></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Düzenleme Modal ── -->
+<div id="editModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+     background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center;">
+  <div class="card" style="width:90%;max-width:400px;margin:0;">
+    <div class="card-title">✏️ Domain Güncelle</div>
+    <div id="alertEdit" class="alert"></div>
+    <input id="editDomain" type="hidden"/>
+    <div class="form-group">
+      <label>Sunucu IP</label>
+      <input id="editIp" type="text" placeholder="1.2.3.4"/>
+    </div>
+    <div class="form-group">
+      <label>Port</label>
+      <input id="editPort" type="number" placeholder="1000"/>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-primary" style="flex:1;" onclick="doUpdateDomain()">Kaydet</button>
+      <button class="btn btn-danger" style="flex:1;" onclick="closeEdit()">İptal</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──
+var TOKEN    = localStorage.getItem('maxdns_token') || '';
+var USERNAME = localStorage.getItem('maxdns_user')  || '';
+var DNS_PORT = 1003;
+
+// ── MaxDNS API ──
+function dnsCall(action, data) {
+  var payload = action + '|' + TOKEN + '|' + JSON.stringify(data || {});
+  try {
+    var result = MaxBridge.search(payload, DNS_PORT);
+    // MaxBridge.search'i DNS için kullanıyoruz, port farklı
+    return JSON.parse(result);
+  } catch(e) {
+    return {ok: false, error: 'Baglanti hatasi: ' + e};
+  }
+}
+
+// MaxBridge search fonksiyonu DNS portuyla çağırmak için override
+function apiCall(action, data) {
+  var payload = action + '|' + TOKEN + '|' + JSON.stringify(data || {});
+  try {
+    // MaxBridge.search yerine postForm benzeri custom köprü kullan
+    // Senkron TCP çağrısı
+    var result = MaxBridge.dnsCall(payload);
+    return JSON.parse(result);
+  } catch(e) {
+    // Fallback: postForm yok, hata göster
+    return {ok: false, error: 'MaxBridge.dnsCall desteklenmiyor. Tarayiciyi guncelleyin.'};
+  }
+}
+
+// ── Auth ──
+function showAlert(id, msg, ok) {
+  var el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'alert ' + (ok ? 'alert-ok' : 'alert-err');
+  el.style.display = 'block';
+  setTimeout(function(){ el.style.display = 'none'; }, 4000);
+}
+
+function showRegister() {
+  document.getElementById('loginForm').classList.add('hidden');
+  document.getElementById('registerForm').classList.remove('hidden');
+}
+function showLogin() {
+  document.getElementById('registerForm').classList.add('hidden');
+  document.getElementById('loginForm').classList.remove('hidden');
+}
+
+function doLogin() {
+  var u = document.getElementById('loginUser').value.trim();
+  var p = document.getElementById('loginPass').value.trim();
+  var r = apiCall('LOGIN', {username: u, password: p});
+  if (r.ok) {
+    TOKEN = r.token; USERNAME = r.username;
+    localStorage.setItem('maxdns_token', TOKEN);
+    localStorage.setItem('maxdns_user',  USERNAME);
+    enterPanel();
+  } else {
+    showAlert('alertAuth', r.error, false);
+  }
+}
+
+function doRegister() {
+  var u = document.getElementById('regUser').value.trim();
+  var e = document.getElementById('regEmail').value.trim();
+  var p = document.getElementById('regPass').value.trim();
+  var r = apiCall('REGISTER', {username: u, email: e, password: p});
+  if (r.ok) {
+    TOKEN = r.token; USERNAME = r.username;
+    localStorage.setItem('maxdns_token', TOKEN);
+    localStorage.setItem('maxdns_user',  USERNAME);
+    enterPanel();
+  } else {
+    showAlert('alertAuth', r.error, false);
+  }
+}
+
+function doLogout() {
+  TOKEN = ''; USERNAME = '';
+  localStorage.removeItem('maxdns_token');
+  localStorage.removeItem('maxdns_user');
+  document.getElementById('mainPanel').classList.add('hidden');
+  document.getElementById('authScreen').classList.remove('hidden');
+  document.getElementById('authScreen').style.display = 'flex';
+}
+
+function enterPanel() {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('mainPanel').classList.remove('hidden');
+  document.getElementById('headerUsername').textContent = '👤 ' + USERNAME;
+  loadDomains();
+}
+
+// ── Tabs ──
+function switchTab(name, btn) {
+  ['domains','add','lookup'].forEach(function(t) {
+    document.getElementById('tab-' + t).classList.add('hidden');
+  });
+  document.querySelectorAll('.tab').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('tab-' + name).classList.remove('hidden');
+  btn.classList.add('active');
+  if (name === 'domains') loadDomains();
+}
+
+// ── Domainler ──
+function loadDomains() {
+  var r = apiCall('MY_DOMAINS', {});
+  var list = document.getElementById('domainList');
+  if (!r.ok) {
+    list.innerHTML = '<div style="color:#FF5252;font-size:13px;text-align:center;padding:20px;">' + r.error + '</div>';
+    return;
+  }
+  if (r.domains.length === 0) {
+    list.innerHTML = '<div style="color:#7986A8;font-size:13px;text-align:center;padding:20px;">Henüz domain yok. "Domain Ekle" sekmesinden ekleyebilirsin.</div>';
+    return;
+  }
+  list.innerHTML = r.domains.map(function(d) {
+    return '<div class="domain-item">' +
+      '<div>' +
+        '<div class="domain-name">' + d.domain + '</div>' +
+        '<div class="domain-meta">' + d.ip + ':' + d.port + ' &nbsp;|&nbsp; ' + d.created + '</div>' +
+      '</div>' +
+      '<div class="domain-actions">' +
+        '<button class="btn btn-primary btn-sm" onclick="openEdit(\'' + d.domain + '\',\'' + d.ip + '\',' + d.port + ')">Düzenle</button>' +
+        '<button class="btn btn-danger btn-sm" onclick="doDeleteDomain(\'' + d.domain + '\')">Sil</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function doAddDomain() {
+  var domain = document.getElementById('newDomain').value.trim().toLowerCase();
+  var ip     = document.getElementById('newIp').value.trim();
+  var port   = parseInt(document.getElementById('newPort').value) || 1000;
+
+  if (!domain.endsWith('.max')) domain += '.max';
+
+  var r = apiCall('REGISTER_DOMAIN', {domain: domain, ip: ip, port: port});
+  if (r.ok) {
+    showAlert('alertAdd', domain + ' basariyla kaydedildi!', true);
+    document.getElementById('newDomain').value = '';
+    document.getElementById('newIp').value     = '';
+    document.getElementById('newPort').value   = '1000';
+  } else {
+    showAlert('alertAdd', r.error, false);
+  }
+}
+
+function doDeleteDomain(domain) {
+  if (!confirm(domain + ' silinecek. Emin misin?')) return;
+  var r = apiCall('DELETE_DOMAIN', {domain: domain});
+  if (r.ok) {
+    showAlert('alertDomains', domain + ' silindi.', true);
+    loadDomains();
+  } else {
+    showAlert('alertDomains', r.error, false);
+  }
+}
+
+// ── Düzenle ──
+function openEdit(domain, ip, port) {
+  document.getElementById('editDomain').value = domain;
+  document.getElementById('editIp').value     = ip;
+  document.getElementById('editPort').value   = port;
+  var m = document.getElementById('editModal');
+  m.style.display = 'flex';
+}
+function closeEdit() {
+  document.getElementById('editModal').style.display = 'none';
+}
+function doUpdateDomain() {
+  var domain = document.getElementById('editDomain').value;
+  var ip     = document.getElementById('editIp').value.trim();
+  var port   = parseInt(document.getElementById('editPort').value) || 1000;
+  var r = apiCall('UPDATE_DOMAIN', {domain: domain, ip: ip, port: port});
+  if (r.ok) {
+    showAlert('alertEdit', 'Guncellendi!', true);
+    closeEdit();
+    loadDomains();
+  } else {
+    showAlert('alertEdit', r.error, false);
+  }
+}
+
+// ── Lookup ──
+function doLookup() {
+  var domain = document.getElementById('lookupDomain').value.trim().toLowerCase();
+  if (!domain.endsWith('.max')) domain += '.max';
+  var r = apiCall('LOOKUP', {domain: domain});
+  var res = document.getElementById('lookupResult');
+  if (r.ok) {
+    document.getElementById('lrIp').textContent   = r.ip;
+    document.getElementById('lrPort').textContent = r.port;
+    res.style.display = 'block';
+    document.getElementById('alertLookup').style.display = 'none';
+  } else {
+    res.style.display = 'none';
+    showAlert('alertLookup', r.error, false);
+  }
+}
+
+// ── Başlangıç ──
+window.onload = function() {
+  if (TOKEN && USERNAME) {
+    enterPanel();
+  } else {
+    document.getElementById('authScreen').style.display = 'flex';
+  }
+};
+</script>
+</body>
+</html>
+

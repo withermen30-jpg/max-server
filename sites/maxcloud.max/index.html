@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MaxCloud — Kişisel Bulut Depolama</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+:root {
+  --bg:      #04060E;
+  --deep:    #080C18;
+  --card:    #0D1220;
+  --border:  #1A2840;
+  --blue:    #4FC3F7;
+  --blue2:   #0288D1;
+  --text:    #E8EDF8;
+  --muted:   #6B7FA0;
+  --dim:     #2A3850;
+  --green:   #00C853;
+  --red:     #FF5252;
+  --orange:  #FF9800;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 400;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Grid BG ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(79,195,247,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79,195,247,.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── SCREENS ── */
+.screen { position: relative; z-index: 1; }
+.hidden { display: none !important; }
+
+/* ── LANG SCREEN ── */
+#langScreen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 40px 24px;
+}
+
+.lang-logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 40px;
+  letter-spacing: -2px;
+  margin-bottom: 8px;
+}
+.lang-logo span { color: var(--blue); }
+
+.lang-tagline {
+  color: var(--muted);
+  font-size: 14px;
+  margin-bottom: 48px;
+}
+
+.lang-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+  margin-bottom: 24px;
+}
+.lang-btn {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+  position: relative;
+}
+.lang-btn:hover { border-color: rgba(79,195,247,.4); background: rgba(79,195,247,.05); }
+.lang-btn.selected { border-color: var(--blue); background: rgba(79,195,247,.08); }
+.lang-btn .check {
+  position: absolute;
+  top: 8px; right: 10px;
+  font-size: 11px; color: var(--blue);
+  opacity: 0; transition: opacity .2s;
+}
+.lang-btn.selected .check { opacity: 1; }
+.lang-flag { font-size: 26px; margin-bottom: 6px; }
+.lang-name { font-size: 13px; font-weight: 500; color: var(--text); }
+
+.lang-next {
+  width: 100%;
+  max-width: 320px;
+  padding: 15px;
+  background: var(--blue);
+  color: #000;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all .2s;
+  opacity: .4;
+  pointer-events: none;
+}
+.lang-next.ready { opacity: 1; pointer-events: all; }
+.lang-next.ready:hover { background: #fff; transform: translateY(-1px); }
+
+/* ── AUTH SCREEN ── */
+#authScreen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+}
+.auth-box {
+  width: 100%;
+  max-width: 380px;
+}
+.auth-logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 28px;
+  letter-spacing: -1px;
+  text-align: center;
+  margin-bottom: 4px;
+}
+.auth-logo span { color: var(--blue); }
+.auth-sub { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 28px; }
+
+.auth-tabs {
+  display: flex;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 20px;
+}
+.auth-tab {
+  flex: 1; padding: 10px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 9px;
+  cursor: pointer;
+  color: var(--muted);
+  transition: all .2s;
+  border: none; background: transparent;
+}
+.auth-tab.active { background: rgba(79,195,247,.15); color: var(--blue); }
+
+.alert-box {
+  padding: 11px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin-bottom: 14px;
+  display: none;
+}
+.alert-box.err { background: rgba(255,82,82,.1); color: var(--red); border: 1px solid rgba(255,82,82,.25); }
+.alert-box.ok  { background: rgba(0,200,83,.1);  color: var(--green); border: 1px solid rgba(0,200,83,.25); }
+
+.form-group { margin-bottom: 13px; }
+.form-label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 6px; letter-spacing: .3px; }
+.form-input {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  padding: 12px 14px;
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  font-family: 'DM Sans', sans-serif;
+  transition: border-color .2s;
+}
+.form-input:focus { border-color: var(--blue); }
+
+.btn-submit {
+  width: 100%;
+  padding: 13px;
+  background: var(--blue);
+  color: #000;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  border: none;
+  border-radius: 11px;
+  cursor: pointer;
+  transition: all .2s;
+  margin-top: 4px;
+}
+.btn-submit:hover { background: #fff; }
+.btn-submit:disabled { opacity: .5; cursor: default; }
+
+.auth-skip {
+  text-align: center;
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color .2s;
+}
+.auth-skip:hover { color: var(--text); }
+
+/* ── MAIN PANEL ── */
+#mainPanel { min-height: 100vh; }
+
+.panel-header {
+  background: rgba(8,12,24,.9);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.panel-logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: -1px;
+}
+.panel-logo span { color: var(--blue); }
+.panel-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.btn-logout {
+  background: transparent;
+  border: 1px solid rgba(255,82,82,.3);
+  color: var(--red);
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.btn-logout:hover { background: rgba(255,82,82,.1); }
+
+.panel-body { padding: 20px; max-width: 700px; margin: 0 auto; }
+
+/* Kota */
+.quota-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 16px;
+}
+.quota-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.quota-title { font-size: 12px; color: var(--muted); letter-spacing: .5px; }
+.quota-pct { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: var(--blue); }
+.quota-track {
+  height: 5px;
+  background: rgba(255,255,255,.07);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.quota-fill { height: 100%; background: var(--blue); border-radius: 3px; transition: width .5s; }
+.quota-text { font-size: 11px; color: var(--dim); text-align: right; }
+
+/* Upload alanı */
+.upload-area {
+  background: var(--card);
+  border: 1px dashed rgba(79,195,247,.25);
+  border-radius: 16px;
+  padding: 28px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+  margin-bottom: 16px;
+  position: relative;
+}
+.upload-area:hover, .upload-area.drag { border-color: var(--blue); background: rgba(79,195,247,.04); }
+.upload-icon { font-size: 36px; margin-bottom: 10px; }
+.upload-text { font-size: 13px; color: var(--muted); }
+.upload-text strong { color: var(--blue); }
+.upload-progress { margin-top: 12px; display: none; }
+.up-track { height: 4px; background: rgba(255,255,255,.07); border-radius: 2px; overflow: hidden; }
+.up-fill  { height: 100%; background: var(--blue); width: 0%; transition: width .2s; border-radius: 2px; }
+.up-label { font-size: 11px; color: var(--muted); margin-top: 5px; }
+#fileInput { display: none; }
+
+/* Files */
+.files-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.files-title { font-size: 11px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+.files-count { font-size: 11px; color: var(--dim); }
+
+.file-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: border-color .2s;
+  animation: slideIn .3s ease;
+}
+@keyframes slideIn {
+  from { opacity:0; transform: translateY(8px); }
+  to   { opacity:1; transform: none; }
+}
+.file-item:hover { border-color: rgba(79,195,247,.2); }
+.file-icon { font-size: 24px; flex-shrink: 0; width: 36px; text-align: center; }
+.file-info { flex: 1; min-width: 0; }
+.file-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.file-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.file-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.btn-icon {
+  width: 32px; height: 32px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 15px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s;
+}
+.btn-dl  { background: rgba(79,195,247,.1);  color: var(--blue); }
+.btn-del { background: rgba(255,82,82,.1);   color: var(--red);  }
+.btn-dl:hover  { background: rgba(79,195,247,.2);  }
+.btn-del:hover { background: rgba(255,82,82,.2); }
+
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.empty-icon { font-size: 40px; margin-bottom: 12px; opacity: .5; }
+
+.loading-wrap { text-align: center; padding: 32px; }
+.spinner {
+  width: 28px; height: 28px;
+  border: 2px solid var(--border);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+  margin: 0 auto 10px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 20px;
+  font-size: 13px;
+  z-index: 1000;
+  transition: transform .3s ease;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.ok   { border-color: rgba(0,200,83,.3); color: var(--green); }
+.toast.err  { border-color: rgba(255,82,82,.3); color: var(--red); }
+
+/* Confirm modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.7);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  display: none;
+}
+.modal-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px;
+  max-width: 320px;
+  width: 90%;
+  text-align: center;
+}
+.modal-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+.modal-desc  { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+.modal-btns  { display: flex; gap: 10px; }
+.modal-btn {
+  flex: 1; padding: 11px;
+  border: none; border-radius: 10px;
+  font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all .2s;
+}
+.modal-cancel { background: var(--deep); color: var(--muted); border: 1px solid var(--border); }
+.modal-confirm { background: var(--red); color: #fff; }
+.modal-cancel:hover  { color: var(--text); }
+.modal-confirm:hover { background: #ff1744; }
+</style>
+</head>
+<body>
+
+<!-- ── DİL SEÇİMİ ── -->
+<div id="langScreen" class="screen">
+  <div class="lang-logo">Max<span>Cloud</span></div>
+  <div class="lang-tagline">Dil seçin / Select language</div>
+
+  <div class="lang-grid">
+    <div class="lang-btn" onclick="selectLang('tr',this)">
+      <div class="lang-flag">🇹🇷</div>
+      <div class="lang-name">Türkçe</div>
+      <span class="check">✓</span>
+    </div>
+    <div class="lang-btn" onclick="selectLang('en',this)">
+      <div class="lang-flag">🇬🇧</div>
+      <div class="lang-name">English</div>
+      <span class="check">✓</span>
+    </div>
+    <div class="lang-btn" onclick="selectLang('de',this)">
+      <div class="lang-flag">🇩🇪</div>
+      <div class="lang-name">Deutsch</div>
+      <span class="check">✓</span>
+    </div>
+    <div class="lang-btn" onclick="selectLang('fr',this)">
+      <div class="lang-flag">🇫🇷</div>
+      <div class="lang-name">Français</div>
+      <span class="check">✓</span>
+    </div>
+  </div>
+
+  <button class="lang-next" id="langNext" onclick="goAuth()">Devam Et →</button>
+</div>
+
+<!-- ── AUTH ── -->
+<div id="authScreen" class="screen hidden">
+  <div class="auth-box">
+    <div class="auth-logo">Max<span>Cloud</span></div>
+    <div class="auth-sub" id="authSub">Kişisel bulut depolaman</div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin" onclick="switchTab('login')" data-key="login">Giriş</button>
+      <button class="auth-tab" id="tabReg" onclick="switchTab('register')" data-key="register">Kayıt Ol</button>
+    </div>
+
+    <div class="alert-box" id="authAlert"></div>
+
+    <!-- Giriş -->
+    <div id="formLogin">
+      <div class="form-group">
+        <label class="form-label" data-key="username">Kullanıcı Adı</label>
+        <input class="form-input" id="loginUser" type="text" autocomplete="username"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-key="password">Şifre</label>
+        <input class="form-input" id="loginPass" type="password" autocomplete="current-password"/>
+      </div>
+      <button class="btn-submit" id="btnLogin" onclick="doLogin()" data-key="loginBtn">Giriş Yap</button>
+    </div>
+
+    <!-- Kayıt -->
+    <div id="formReg" class="hidden">
+      <div class="form-group">
+        <label class="form-label" data-key="username">Kullanıcı Adı</label>
+        <input class="form-input" id="regUser" type="text"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-key="email">E-posta (opsiyonel)</label>
+        <input class="form-input" id="regEmail" type="email"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-key="password">Şifre</label>
+        <input class="form-input" id="regPass" type="password"/>
+      </div>
+      <button class="btn-submit" id="btnReg" onclick="doRegister()" data-key="registerBtn">Kayıt Ol</button>
+    </div>
+
+    <div class="auth-skip" onclick="goMain(null)" data-key="skip">Şimdilik atla →</div>
+  </div>
+</div>
+
+<!-- ── ANA PANEL ── -->
+<div id="mainPanel" class="screen hidden">
+  <div class="panel-header">
+    <div class="panel-logo">Max<span>Cloud</span></div>
+    <div class="panel-user">
+      <span id="headerUser"></span>
+      <button class="btn-logout" onclick="doLogout()" data-key="logout">Çıkış</button>
+    </div>
+  </div>
+
+  <div class="panel-body">
+
+    <!-- Kota -->
+    <div class="quota-card">
+      <div class="quota-header">
+        <span class="quota-title" data-key="storage">DEPOLAMA</span>
+        <span class="quota-pct" id="quotaPct">0%</span>
+      </div>
+      <div class="quota-track">
+        <div class="quota-fill" id="quotaFill" style="width:0%"></div>
+      </div>
+      <div class="quota-text" id="quotaText">— / —</div>
+    </div>
+
+    <!-- Upload -->
+    <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+      <div class="upload-icon">☁️</div>
+      <div class="upload-text" id="uploadHint"><strong data-key="uploadClick">Tıkla</strong> <span data-key="uploadHint">veya dosya sürükle</span></div>
+      <div class="upload-progress" id="uploadProgress">
+        <div class="up-track"><div class="up-fill" id="upFill"></div></div>
+        <div class="up-label" id="upLabel"></div>
+      </div>
+    </div>
+    <input type="file" id="fileInput" multiple onchange="handleFiles(this.files)"/>
+
+    <!-- Dosyalar -->
+    <div class="files-header">
+      <span class="files-title" data-key="myFiles">Dosyalarım</span>
+      <span class="files-count" id="filesCount"></span>
+    </div>
+    <div id="fileArea">
+      <div class="loading-wrap"><div class="spinner"></div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <div class="modal-title">🗑️ Sil</div>
+    <div class="modal-desc" id="modalDesc"></div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-cancel" onclick="closeModal()">İptal</button>
+      <button class="modal-btn modal-confirm" id="modalConfirm">Sil</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Dil ──
+var LANG = localStorage.getItem('mc_lang') || '';
+var STR = {
+  tr: { authSub:'Kişisel bulut depolaman', login:'Giriş', register:'Kayıt Ol',
+        username:'Kullanıcı Adı', password:'Şifre', email:'E-posta (opsiyonel)',
+        loginBtn:'Giriş Yap', registerBtn:'Kayıt Ol', skip:'Şimdilik atla →',
+        storage:'DEPOLAMA', myFiles:'Dosyalarım', uploadClick:'Tıkla',
+        uploadHint:'veya dosya sürükle', logout:'Çıkış',
+        downloading:'İndiriliyor...', uploading:'Yükleniyor...',
+        uploaded:'Yüklendi!', deleted:'Silindi.', confirmDel:'silinecek. Emin misin?',
+        noFiles:'Henüz dosya yok.', continue:'Devam Et →' },
+  en: { authSub:'Your personal cloud storage', login:'Login', register:'Register',
+        username:'Username', password:'Password', email:'Email (optional)',
+        loginBtn:'Login', registerBtn:'Register', skip:'Skip for now →',
+        storage:'STORAGE', myFiles:'My Files', uploadClick:'Click',
+        uploadHint:'or drag files here', logout:'Logout',
+        downloading:'Downloading...', uploading:'Uploading...',
+        uploaded:'Uploaded!', deleted:'Deleted.', confirmDel:'will be deleted. Sure?',
+        noFiles:'No files yet.', continue:'Continue →' },
+  de: { authSub:'Dein persönlicher Cloud-Speicher', login:'Anmelden', register:'Registrieren',
+        username:'Benutzername', password:'Passwort', email:'E-Mail (optional)',
+        loginBtn:'Anmelden', registerBtn:'Registrieren', skip:'Überspringen →',
+        storage:'SPEICHER', myFiles:'Meine Dateien', uploadClick:'Klicken',
+        uploadHint:'oder Dateien hierher ziehen', logout:'Abmelden',
+        downloading:'Herunterladen...', uploading:'Hochladen...',
+        uploaded:'Hochgeladen!', deleted:'Gelöscht.', confirmDel:'wird gelöscht. Sicher?',
+        noFiles:'Noch keine Dateien.', continue:'Weiter →' },
+  fr: { authSub:'Votre stockage cloud personnel', login:'Connexion', register:'Inscription',
+        username:"Nom d'utilisateur", password:'Mot de passe', email:'Email (optionnel)',
+        loginBtn:'Se connecter', registerBtn:"S'inscrire", skip:'Passer →',
+        storage:'STOCKAGE', myFiles:'Mes fichiers', uploadClick:'Cliquer',
+        uploadHint:'ou glisser des fichiers ici', logout:'Déconnexion',
+        downloading:'Téléchargement...', uploading:'Envoi en cours...',
+        uploaded:'Envoyé!', deleted:'Supprimé.', confirmDel:'sera supprimé. Sûr?',
+        noFiles:'Aucun fichier.', continue:'Continuer →' }
+};
+
+function t(key) { return (STR[LANG] || STR['tr'])[key] || key; }
+
+function selectLang(lang, el) {
+  LANG = lang;
+  document.querySelectorAll('.lang-btn').forEach(function(b){ b.classList.remove('selected'); });
+  el.classList.add('selected');
+  var btn = document.getElementById('langNext');
+  btn.classList.add('ready');
+  btn.textContent = t('continue');
+  localStorage.setItem('mc_lang', lang);
+}
+
+function applyStrings() {
+  document.querySelectorAll('[data-key]').forEach(function(el) {
+    var k = el.getAttribute('data-key');
+    var v = t(k);
+    if (el.tagName === 'INPUT') el.placeholder = v;
+    else el.textContent = v;
+  });
+}
+
+function goAuth() {
+  document.getElementById('langScreen').classList.add('hidden');
+  document.getElementById('authScreen').classList.remove('hidden');
+  applyStrings();
+}
+
+// ── State ──
+var TOKEN    = localStorage.getItem('mc_token') || '';
+var USERNAME = localStorage.getItem('mc_user')  || '';
+var CLOUD_PORT = 1005;
+
+// ── API ──
+function cloudCall(action, data) {
+  var payload = action + '|' + TOKEN + '|' + JSON.stringify(data || {});
+  try {
+    var r = MaxBridge.cloudCall(payload);
+    return JSON.parse(r);
+  } catch(e) {
+    return {ok: false, error: 'Bağlantı hatası: ' + e};
+  }
+}
+
+// ── Auth ──
+function switchTab(tab) {
+  document.getElementById('formLogin').classList.toggle('hidden', tab !== 'login');
+  document.getElementById('formReg').classList.toggle('hidden', tab !== 'register');
+  document.getElementById('tabLogin').classList.toggle('active', tab === 'login');
+  document.getElementById('tabReg').classList.toggle('active', tab === 'register');
+  document.getElementById('authAlert').style.display = 'none';
+}
+
+function showAuthAlert(msg, ok) {
+  var el = document.getElementById('authAlert');
+  el.textContent = msg;
+  el.className = 'alert-box ' + (ok ? 'ok' : 'err');
+  el.style.display = 'block';
+}
+
+function doLogin() {
+  var u = document.getElementById('loginUser').value.trim();
+  var p = document.getElementById('loginPass').value.trim();
+  if (!u || !p) { showAuthAlert('Kullanıcı adı ve şifre gerekli.', false); return; }
+  document.getElementById('btnLogin').disabled = true;
+  var r = cloudCall('LOGIN', {username: u, password: p});
+  document.getElementById('btnLogin').disabled = false;
+  if (r.ok) {
+    TOKEN = r.token; USERNAME = r.username;
+    localStorage.setItem('mc_token', TOKEN);
+    localStorage.setItem('mc_user', USERNAME);
+    goMain(r.quota);
+  } else { showAuthAlert(r.error, false); }
+}
+
+function doRegister() {
+  var u = document.getElementById('regUser').value.trim();
+  var e = document.getElementById('regEmail').value.trim();
+  var p = document.getElementById('regPass').value.trim();
+  if (!u || !p) { showAuthAlert('Kullanıcı adı ve şifre gerekli.', false); return; }
+  document.getElementById('btnReg').disabled = true;
+  var r = cloudCall('REGISTER', {username: u, email: e, password: p});
+  document.getElementById('btnReg').disabled = false;
+  if (r.ok) {
+    TOKEN = r.token; USERNAME = r.username;
+    localStorage.setItem('mc_token', TOKEN);
+    localStorage.setItem('mc_user', USERNAME);
+    goMain(r.quota);
+  } else { showAuthAlert(r.error, false); }
+}
+
+function doLogout() {
+  TOKEN = ''; USERNAME = '';
+  localStorage.removeItem('mc_token');
+  localStorage.removeItem('mc_user');
+  document.getElementById('mainPanel').classList.add('hidden');
+  document.getElementById('authScreen').classList.remove('hidden');
+  applyStrings();
+}
+
+function goMain(quota) {
+  document.getElementById('authScreen').classList.add('hidden');
+  document.getElementById('langScreen').classList.add('hidden');
+  document.getElementById('mainPanel').classList.remove('hidden');
+  document.getElementById('headerUser').textContent = '👤 ' + USERNAME;
+  applyStrings();
+  loadFiles();
+}
+
+// ── Kota ──
+function updateQuota(used, quota) {
+  var pct = Math.min(Math.round((used / quota) * 100), 100);
+  document.getElementById('quotaFill').style.width = pct + '%';
+  document.getElementById('quotaFill').style.background =
+    pct > 90 ? '#FF5252' : pct > 70 ? '#FF9800' : '#4FC3F7';
+  document.getElementById('quotaPct').textContent = pct + '%';
+  document.getElementById('quotaText').textContent = fmtSize(used) + ' / ' + fmtSize(quota);
+}
+
+function fmtSize(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  if (b < 1073741824) return (b/1048576).toFixed(1) + ' MB';
+  return (b/1073741824).toFixed(2) + ' GB';
+}
+
+function fmtDate(s) { return s ? s.substring(0,16) : ''; }
+
+function mimeIcon(m) {
+  if (!m) return '📄';
+  if (m.startsWith('image/')) return '🖼️';
+  if (m.startsWith('video/')) return '🎬';
+  if (m.startsWith('audio/')) return '🎵';
+  if (m.includes('pdf'))      return '📕';
+  if (m.includes('zip')||m.includes('rar')) return '📦';
+  if (m.includes('text'))     return '📝';
+  return '📄';
+}
+
+// ── Dosyalar ──
+function loadFiles() {
+  document.getElementById('fileArea').innerHTML =
+    '<div class="loading-wrap"><div class="spinner"></div></div>';
+
+  var r = cloudCall('LIST', {});
+  if (!r.ok) {
+    document.getElementById('fileArea').innerHTML =
+      '<div class="empty-state"><div class="empty-icon">⚠️</div>' + r.error + '</div>';
+    return;
+  }
+
+  updateQuota(r.used || 0, r.quota || 2147483648);
+  var files = r.files || [];
+  document.getElementById('filesCount').textContent = files.length + ' dosya';
+
+  if (files.length === 0) {
+    document.getElementById('fileArea').innerHTML =
+      '<div class="empty-state"><div class="empty-icon">☁️</div>' + t('noFiles') + '</div>';
+    return;
+  }
+
+  var html = '';
+  files.forEach(function(f) {
+    html += '<div class="file-item">' +
+      '<div class="file-icon">' + mimeIcon(f.mime) + '</div>' +
+      '<div class="file-info">' +
+        '<div class="file-name">' + esc(f.filename) + '</div>' +
+        '<div class="file-meta">' + fmtSize(f.size) + ' · ' + fmtDate(f.created) + '</div>' +
+      '</div>' +
+      '<div class="file-actions">' +
+        '<button class="btn-icon btn-dl" onclick="doDownload(' + f.id + ',\'' + esc(f.filename) + '\',\'' + (f.mime||'') + '\')" title="İndir">⬇</button>' +
+        '<button class="btn-icon btn-del" onclick="confirmDelete(' + f.id + ',\'' + esc(f.filename) + '\')" title="Sil">🗑</button>' +
+      '</div>' +
+    '</div>';
+  });
+  document.getElementById('fileArea').innerHTML = html;
+}
+
+function esc(s) { return String(s).replace(/'/g,"&#39;").replace(/"/g,'&quot;'); }
+
+// ── Yükle ──
+var uploadArea = document.getElementById('uploadArea');
+uploadArea.addEventListener('dragover', function(e) { e.preventDefault(); uploadArea.classList.add('drag'); });
+uploadArea.addEventListener('dragleave', function() { uploadArea.classList.remove('drag'); });
+uploadArea.addEventListener('drop', function(e) {
+  e.preventDefault(); uploadArea.classList.remove('drag');
+  handleFiles(e.dataTransfer.files);
+});
+
+function handleFiles(files) {
+  if (!files || !files.length) return;
+  var prog = document.getElementById('uploadProgress');
+  var fill = document.getElementById('upFill');
+  var lbl  = document.getElementById('upLabel');
+  prog.style.display = 'block';
+
+  var i = 0;
+  function next() {
+    if (i >= files.length) {
+      lbl.textContent = t('uploaded');
+      fill.style.width = '100%';
+      setTimeout(function() {
+        prog.style.display = 'none';
+        fill.style.width = '0%';
+        loadFiles();
+      }, 1000);
+      return;
+    }
+    var file = files[i++];
+    lbl.textContent = t('uploading') + ' ' + file.name;
+    fill.style.width = Math.round((i / files.length) * 85) + '%';
+
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var b64 = e.target.result.split(',')[1];
+      cloudCall('UPLOAD', { filename: file.name, mime: file.type || 'application/octet-stream', data: b64 });
+      next();
+    };
+    reader.readAsDataURL(file);
+  }
+  next();
+}
+
+// ── İndir ──
+function doDownload(id, filename, mime) {
+  showToast(t('downloading'), 'ok');
+  var r = cloudCall('DOWNLOAD', {id: id});
+  if (!r.ok) { showToast(r.error, 'err'); return; }
+  try {
+    var byteStr = atob(r.data);
+    var arr = new Uint8Array(byteStr.length);
+    for (var i = 0; i < byteStr.length; i++) arr[i] = byteStr.charCodeAt(i);
+    var blob = new Blob([arr], {type: mime || 'application/octet-stream'});
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) { showToast('İndirme hatası: ' + e, 'err'); }
+}
+
+// ── Sil ──
+var pendingDeleteId = null;
+function confirmDelete(id, filename) {
+  pendingDeleteId = id;
+  document.getElementById('modalDesc').textContent = '"' + filename + '" ' + t('confirmDel');
+  document.getElementById('modal').style.display = 'flex';
+  document.getElementById('modalConfirm').onclick = function() {
+    closeModal();
+    var r = cloudCall('DELETE', {id: pendingDeleteId});
+    if (r.ok) { showToast(t('deleted'), 'ok'); loadFiles(); }
+    else showToast(r.error, 'err');
+  };
+}
+function closeModal() { document.getElementById('modal').style.display = 'none'; }
+
+// ── Toast ──
+var toastTimer;
+function showToast(msg, type) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + (type || '') + ' show';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { el.classList.remove('show'); }, 3000);
+}
+
+// ── Başlangıç ──
+window.onload = function() {
+  if (TOKEN && USERNAME) {
+    goMain(null);
+  } else if (LANG) {
+    goAuth();
+  }
+  // else: dil seçim ekranı görünür
+};
+</script>
+</body>
+</html>
+

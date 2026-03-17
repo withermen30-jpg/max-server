@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MaxNetwork — Kendi İnternetin</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;1,300&display=swap');
+
+:root {
+  --black:   #04060E;
+  --deep:    #080C18;
+  --card:    #0D1220;
+  --border:  #1A2840;
+  --blue:    #4FC3F7;
+  --blue2:   #0288D1;
+  --glow:    rgba(79,195,247,0.18);
+  --text:    #E8EDF8;
+  --muted:   #6B7FA0;
+  --dim:     #2A3850;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--black);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/* ── Custom Cursor ── */
+.cursor {
+  position: fixed;
+  width: 10px; height: 10px;
+  background: var(--blue);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%,-50%);
+  transition: transform .1s, width .2s, height .2s, opacity .2s;
+  mix-blend-mode: screen;
+}
+.cursor-ring {
+  position: fixed;
+  width: 36px; height: 36px;
+  border: 1px solid rgba(79,195,247,.4);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  transform: translate(-50%,-50%);
+  transition: transform .12s ease, width .3s, height .3s;
+}
+
+/* ── Noise overlay ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+  opacity: .5;
+}
+
+/* ── Grid lines ── */
+.grid-bg {
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(79,195,247,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79,195,247,.03) 1px, transparent 1px);
+  background-size: 64px 64px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 20px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(180deg, rgba(4,6,14,.9) 0%, transparent 100%);
+  backdrop-filter: blur(12px);
+}
+.nav-logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: -0.5px;
+}
+.nav-logo span { color: var(--blue); }
+.nav-links { display: flex; gap: 32px; list-style: none; }
+.nav-links a {
+  font-size: 13px;
+  color: var(--muted);
+  text-decoration: none;
+  letter-spacing: .5px;
+  transition: color .2s;
+}
+.nav-links a:hover { color: var(--text); }
+.nav-cta {
+  background: var(--blue);
+  color: #000;
+  padding: 9px 22px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background .2s, transform .2s;
+  font-family: 'Syne', sans-serif;
+}
+.nav-cta:hover { background: #fff; transform: translateY(-1px); }
+
+/* ── HERO ── */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 120px 24px 80px;
+  z-index: 1;
+  overflow: hidden;
+}
+
+/* Glow orb */
+.hero::after {
+  content: '';
+  position: absolute;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(79,195,247,.12) 0%, transparent 70%);
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  pointer-events: none;
+  animation: pulse 4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+  50%       { transform: translate(-50%,-50%) scale(1.15); opacity: .7; }
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(79,195,247,.08);
+  border: 1px solid rgba(79,195,247,.2);
+  border-radius: 100px;
+  padding: 6px 16px;
+  font-size: 12px;
+  color: var(--blue);
+  letter-spacing: .5px;
+  margin-bottom: 32px;
+  animation: fadeUp .8s ease both;
+}
+.badge-dot {
+  width: 6px; height: 6px;
+  background: var(--blue);
+  border-radius: 50%;
+  animation: blink 1.5s ease infinite;
+}
+@keyframes blink {
+  0%,100% { opacity: 1; }
+  50%      { opacity: .3; }
+}
+
+.hero-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: clamp(48px, 9vw, 96px);
+  line-height: .95;
+  letter-spacing: -3px;
+  margin-bottom: 28px;
+  animation: fadeUp .8s .1s ease both;
+}
+.hero-title .line2 { color: var(--blue); display: block; }
+
+.hero-sub {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--muted);
+  max-width: 520px;
+  line-height: 1.7;
+  margin-bottom: 48px;
+  font-weight: 300;
+  animation: fadeUp .8s .2s ease both;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+  animation: fadeUp .8s .3s ease both;
+}
+.btn-primary {
+  background: var(--blue);
+  color: #000;
+  padding: 14px 32px;
+  border-radius: 100px;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  font-family: 'Syne', sans-serif;
+  display: flex; align-items: center; gap: 8px;
+  transition: all .25s;
+  border: none; cursor: none;
+}
+.btn-primary:hover { background: #fff; transform: translateY(-2px); box-shadow: 0 12px 40px rgba(79,195,247,.25); }
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  padding: 14px 32px;
+  border-radius: 100px;
+  font-size: 14px;
+  font-weight: 400;
+  text-decoration: none;
+  border: 1px solid var(--border);
+  transition: all .25s;
+  cursor: none;
+}
+.btn-ghost:hover { border-color: var(--blue); color: var(--blue); }
+
+/* Scroll indicator */
+.scroll-hint {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--dim);
+  font-size: 11px;
+  letter-spacing: 2px;
+  animation: fadeUp 1s .6s both;
+}
+.scroll-line {
+  width: 1px; height: 48px;
+  background: linear-gradient(180deg, var(--blue), transparent);
+  animation: scrollLine 2s ease infinite;
+}
+@keyframes scrollLine {
+  0%   { transform: scaleY(0); transform-origin: top; }
+  50%  { transform: scaleY(1); transform-origin: top; }
+  51%  { transform: scaleY(1); transform-origin: bottom; }
+  100% { transform: scaleY(0); transform-origin: bottom; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── STATS ── */
+.stats {
+  position: relative;
+  z-index: 1;
+  padding: 0 24px 100px;
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+}
+.stat-item {
+  background: var(--deep);
+  padding: 32px 28px;
+  text-align: center;
+}
+.stat-num {
+  font-family: 'Syne', sans-serif;
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--blue);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.stat-label {
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: .5px;
+}
+
+/* ── SECTION ── */
+section {
+  position: relative;
+  z-index: 1;
+  padding: 100px 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.section-tag {
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--blue);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-tag::before {
+  content: '';
+  width: 24px; height: 1px;
+  background: var(--blue);
+}
+.section-title {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(32px, 5vw, 56px);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -2px;
+  margin-bottom: 16px;
+}
+.section-sub {
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.7;
+  max-width: 480px;
+}
+
+/* ── FEATURES BENTO ── */
+.bento {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-template-rows: auto;
+  gap: 12px;
+  margin-top: 60px;
+}
+.bento-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .3s, transform .3s;
+}
+.bento-card:hover {
+  border-color: rgba(79,195,247,.35);
+  transform: translateY(-3px);
+}
+.bento-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(79,195,247,.3), transparent);
+  opacity: 0;
+  transition: opacity .3s;
+}
+.bento-card:hover::before { opacity: 1; }
+
+.bc-1 { grid-column: span 7; }
+.bc-2 { grid-column: span 5; }
+.bc-3 { grid-column: span 4; }
+.bc-4 { grid-column: span 4; }
+.bc-5 { grid-column: span 4; }
+.bc-6 { grid-column: span 6; }
+.bc-7 { grid-column: span 6; }
+
+.bento-icon {
+  font-size: 32px;
+  margin-bottom: 16px;
+  display: block;
+}
+.bento-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+.bento-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+.bento-tag {
+  display: inline-block;
+  margin-top: 16px;
+  padding: 4px 12px;
+  background: rgba(79,195,247,.08);
+  border: 1px solid rgba(79,195,247,.15);
+  border-radius: 100px;
+  font-size: 11px;
+  color: var(--blue);
+  letter-spacing: .3px;
+}
+
+/* Big card extras */
+.bc-1 .bento-title { font-size: 26px; }
+.bc-1 .bento-desc  { font-size: 14px; max-width: 380px; }
+
+/* Terminal mockup inside bc-1 */
+.terminal {
+  margin-top: 20px;
+  background: rgba(0,0,0,.5);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  color: #00C853;
+}
+.terminal-line { margin-bottom: 4px; }
+.terminal-line .prompt { color: var(--blue); margin-right: 8px; }
+.terminal-line .cmd { color: var(--text); }
+.terminal-line .out { color: var(--muted); }
+.cursor-blink {
+  display: inline-block;
+  width: 8px; height: 14px;
+  background: var(--blue);
+  vertical-align: middle;
+  animation: blink 1s step-end infinite;
+}
+
+/* ── ECOSYSTEM ── */
+.ecosystem {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 56px;
+}
+.eco-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px;
+  transition: all .3s;
+  position: relative;
+  overflow: hidden;
+}
+.eco-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--blue);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .3s;
+}
+.eco-card:hover { border-color: rgba(79,195,247,.3); transform: translateY(-4px); }
+.eco-card:hover::after { transform: scaleX(1); }
+
+.eco-icon {
+  width: 48px; height: 48px;
+  background: rgba(79,195,247,.1);
+  border: 1px solid rgba(79,195,247,.2);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  margin-bottom: 16px;
+}
+.eco-name {
+  font-family: 'Syne', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.eco-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+.eco-port {
+  margin-top: 14px;
+  font-size: 11px;
+  color: var(--dim);
+  font-family: 'Courier New', monospace;
+}
+
+/* ── CTA BANNER ── */
+.cta-banner {
+  position: relative;
+  z-index: 1;
+  margin: 0 24px 100px;
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 28px;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--card) 0%, rgba(79,195,247,.06) 100%);
+  border: 1px solid rgba(79,195,247,.2);
+  padding: 64px 48px;
+  text-align: center;
+}
+.cta-banner::before {
+  content: '';
+  position: absolute;
+  top: -100px; right: -100px;
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(79,195,247,.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+.cta-title {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(28px, 4vw, 48px);
+  font-weight: 800;
+  letter-spacing: -2px;
+  margin-bottom: 16px;
+}
+.cta-sub {
+  color: var(--muted);
+  font-size: 15px;
+  margin-bottom: 36px;
+}
+.cta-buttons { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+/* ── FOOTER ── */
+footer {
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid var(--border);
+  padding: 48px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+.footer-logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+}
+.footer-logo span { color: var(--blue); }
+.footer-links { display: flex; gap: 24px; flex-wrap: wrap; }
+.footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color .2s; }
+.footer-links a:hover { color: var(--text); }
+.footer-copy { font-size: 12px; color: var(--dim); }
+
+/* ── SCROLL REVEAL ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity .7s ease, transform .7s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* ── MOBILE ── */
+@media (max-width: 768px) {
+  nav { padding: 16px 20px; }
+  .nav-links { display: none; }
+  .bento { grid-template-columns: 1fr; }
+  .bc-1, .bc-2, .bc-3, .bc-4, .bc-5, .bc-6, .bc-7 { grid-column: span 1; }
+  .stats { grid-template-columns: 1fr 1fr; }
+  footer { flex-direction: column; text-align: center; }
+  .cta-banner { padding: 40px 24px; }
+}
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="grid-bg"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Max<span>Network</span></div>
+  <ul class="nav-links">
+    <li><a href="#ozellikler">Özellikler</a></li>
+    <li><a href="#ekosistem">Ekosistem</a></li>
+    <li><a href="#maxcloud">MaxCloud</a></li>
+  </ul>
+  <a href="max://anasayfa.max" class="nav-cta">Başla →</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge">
+    <div class="badge-dot"></div>
+    v0.4 Alpha — Şimdi Yayında
+  </div>
+  <h1 class="hero-title">
+    Kendi İnternetin,<br>
+    <span class="line2">Kendi Özgürlüğün.</span>
+  </h1>
+  <p class="hero-sub">
+    MaxNetwork, .max domain sistemi üzerine kurulu bağımsız bir internet ağıdır.
+    Gizlilik, özgürlük ve hız — herkesin kendi sunucusunda.
+  </p>
+  <div class="hero-actions">
+    <a href="max://maxdns.max" class="btn-primary">
+      <span>Domain Kaydet</span>
+      <span>→</span>
+    </a>
+    <a href="max://maxsearch.max" class="btn-ghost">MaxSearch'ü Dene</a>
+  </div>
+  <div class="scroll-hint">
+    <div class="scroll-line"></div>
+    KEŞFET
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats reveal">
+  <div class="stat-item">
+    <div class="stat-num">.max</div>
+    <div class="stat-label">Özel Domain Uzantısı</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">2GB</div>
+    <div class="stat-label">Ücretsiz MaxCloud</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">5</div>
+    <div class="stat-label">Aktif Servis</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">0</div>
+    <div class="stat-label">Reklam & Takip</div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section id="ozellikler">
+  <div class="section-tag">Özellikler</div>
+  <h2 class="section-title reveal">Her şey<br>senin kontrolünde.</h2>
+  <p class="section-sub reveal">Tracker engelleme, fingerprint koruması, özel DNS ve bulut depolama — hepsi tek çatı altında.</p>
+
+  <div class="bento">
+    <div class="bento-card bc-1 reveal">
+      <span class="bento-icon">🛡️</span>
+      <div class="bento-title">Gizlilik Önce Gelir</div>
+      <div class="bento-desc">WebRTC sızıntısı engelleme, canvas fingerprint koruması, üçüncü taraf cookie bloklaması ve tracker engelleme sistemi varsayılan olarak aktif.</div>
+      <div class="terminal">
+        <div class="terminal-line"><span class="prompt">›</span><span class="cmd">google-analytics.com</span></div>
+        <div class="terminal-line"><span class="out">✗ Engellendi</span></div>
+        <div class="terminal-line"><span class="prompt">›</span><span class="cmd">doubleclick.net</span></div>
+        <div class="terminal-line"><span class="out">✗ Engellendi</span></div>
+        <div class="terminal-line"><span class="prompt">›</span><span class="cmd">anasayfa.max<span class="cursor-blink"></span></span></div>
+      </div>
+      <span class="bento-tag">Varsayılan Aktif</span>
+    </div>
+
+    <div class="bento-card bc-2 reveal">
+      <span class="bento-icon">🌐</span>
+      <div class="bento-title">MaxDNS Sistemi</div>
+      <div class="bento-desc">İlk kaydeden sahip olur. Kendi .max adresinle sunucunu dünyaya aç. Ücret yok, limit yok.</div>
+      <span class="bento-tag">maxdns.max</span>
+    </div>
+
+    <div class="bento-card bc-3 reveal">
+      <span class="bento-icon">🔔</span>
+      <div class="bento-title">MaxNotify</div>
+      <div class="bento-desc">.max siteleri uygulama kapalıyken bile bildirim gönderebilir.</div>
+      <span class="bento-tag">Arka Plan</span>
+    </div>
+
+    <div class="bento-card bc-4 reveal">
+      <span class="bento-icon">⚡</span>
+      <div class="bento-title">TCP Protokolü</div>
+      <div class="bento-desc">HTTP yerine ham TCP. Daha hızlı, daha hafif, daha kontrollü.</div>
+      <span class="bento-tag">Port 1000</span>
+    </div>
+
+    <div class="bento-card bc-5 reveal">
+      <span class="bento-icon">☁️</span>
+      <div class="bento-title">MaxCloud</div>
+      <div class="bento-desc">2GB ücretsiz bulut depolama. Dosyalarını her yerden eriş.</div>
+      <span class="bento-tag">2GB Ücretsiz</span>
+    </div>
+
+    <div class="bento-card bc-6 reveal">
+      <span class="bento-icon">🔍</span>
+      <div class="bento-title">MaxSearch</div>
+      <div class="bento-desc">.max ağı içinde arama yapın. Kendi arama motorunuz, kendi sonuçlarınız. Serper.dev altyapısıyla güçlendirilmiş.</div>
+      <span class="bento-tag">maxsearch.max</span>
+    </div>
+
+    <div class="bento-card bc-7 reveal">
+      <span class="bento-icon">🖥️</span>
+      <div class="bento-title">Çoklu Platform</div>
+      <div class="bento-desc">Android tarayıcı ve PC PyQt6 tarayıcısı ile tüm cihazlardan .max ağına erişin.</div>
+      <span class="bento-tag">Android + PC</span>
+    </div>
+  </div>
+</section>
+
+<!-- ECOSYSTEM -->
+<section id="ekosistem">
+  <div class="section-tag">Ekosistem</div>
+  <h2 class="section-title reveal">Beş servis,<br>tek ağ.</h2>
+  <p class="section-sub reveal">MaxNetwork altyapısını oluşturan tüm servisler.</p>
+
+  <div class="ecosystem">
+    <div class="eco-card reveal">
+      <div class="eco-icon">🌍</div>
+      <div class="eco-name">Main Server</div>
+      <div class="eco-desc">.max sitelerini sunan ana TCP sunucusu. Domain listesinden dosya servisi.</div>
+      <div class="eco-port">:1000</div>
+    </div>
+    <div class="eco-card reveal">
+      <div class="eco-icon">🔍</div>
+      <div class="eco-name">MaxSearch API</div>
+      <div class="eco-desc">Arama sorgularını işleyen API servisi. JavaScript köprüsüyle entegre.</div>
+      <div class="eco-port">:1002</div>
+    </div>
+    <div class="eco-card reveal">
+      <div class="eco-icon">🌐</div>
+      <div class="eco-name">MaxDNS</div>
+      <div class="eco-desc">Domain kayıt ve yönetim sistemi. Kullanıcı hesapları, IP yönlendirme.</div>
+      <div class="eco-port">:1003</div>
+    </div>
+    <div class="eco-card reveal">
+      <div class="eco-icon">🔔</div>
+      <div class="eco-name">MaxPush</div>
+      <div class="eco-desc">Arka plan bildirim servisi. Cihaz bazlı push bildirimleri.</div>
+      <div class="eco-port">:1004</div>
+    </div>
+    <div class="eco-card reveal">
+      <div class="eco-icon">☁️</div>
+      <div class="eco-name">MaxCloud</div>
+      <div class="eco-desc">Kişisel bulut depolama. 2GB ücretsiz, base64 transfer protokolü.</div>
+      <div class="eco-port">:1005</div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-banner reveal" id="maxcloud">
+  <div class="cta-title">MaxCloud'u<br>dene, ücretsiz.</div>
+  <div class="cta-sub">2GB bulut depolama, kayıt ol ve hemen başla.</div>
+  <div class="cta-buttons">
+    <a href="max://maxcloud.max" class="btn-primary">☁️ MaxCloud'u Aç</a>
+    <a href="https://cloud.maxnetwork.com.tr" class="btn-ghost">Uygulamayı İndir</a>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">Max<span>Network</span></div>
+  <div class="footer-links">
+    <a href="max://maxdns.max">MaxDNS</a>
+    <a href="max://maxsearch.max">MaxSearch</a>
+    <a href="max://maxcloud.max">MaxCloud</a>
+    <a href="https://github.com/withermen30-jpg">GitHub</a>
+  </div>
+  <div class="footer-copy">© 2024 MaxNetwork — v0.4 Alpha</div>
+</footer>
+
+<script>
+// Cursor
+var cursor = document.getElementById('cursor');
+var ring   = document.getElementById('cursorRing');
+var mx = 0, my = 0, rx = 0, ry = 0;
+
+document.addEventListener('mousemove', function(e) {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx + 'px';
+  cursor.style.top  = my + 'px';
+});
+
+function animRing() {
+  rx += (mx - rx) * 0.12;
+  ry += (my - ry) * 0.12;
+  ring.style.left = rx + 'px';
+  ring.style.top  = ry + 'px';
+  requestAnimationFrame(animRing);
+}
+animRing();
+
+document.querySelectorAll('a, button, .bento-card, .eco-card').forEach(function(el) {
+  el.addEventListener('mouseenter', function() {
+    cursor.style.width  = '18px';
+    cursor.style.height = '18px';
+    ring.style.width    = '52px';
+    ring.style.height   = '52px';
+  });
+  el.addEventListener('mouseleave', function() {
+    cursor.style.width  = '10px';
+    cursor.style.height = '10px';
+    ring.style.width    = '36px';
+    ring.style.height   = '36px';
+  });
+});
+
+// Scroll reveal
+var reveals = document.querySelectorAll('.reveal');
+var observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.12 });
+reveals.forEach(function(el) { observer.observe(el); });
+</script>
+</body>
+</html>
+
